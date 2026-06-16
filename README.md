@@ -296,6 +296,93 @@ Pre-generated benchmark datasets are included in `data/` and can be used directl
 
 ---
 
+## Evaluation
+
+The `evaluate/` package scores any LiteLLM model on the shipped benchmarks and
+reports the headline metrics. (This is an inference-only, in-context evaluation —
+see [REPRODUCTION.md](REPRODUCTION.md) for how it relates to the paper's numbers.)
+
+### Quickstart — score a model in a few minutes
+
+The evaluator imports only the standard library plus a model client, so it runs
+**without installing the full package** (no generation dependencies needed). From a
+fresh clone:
+
+```bash
+pip install openai          # only runtime dep for an OpenAI-compatible endpoint
+
+# zero-setup smoke — no API key, no network (deterministic stub):
+python -m evaluate.eval_qa --data data/toolsense-qa/data.jsonl --output results/qa --dry-run
+
+# real run against any OpenAI-compatible endpoint (here: OpenRouter):
+export LITELLM_BASE_URL=https://openrouter.ai/api/v1
+export LITELLM_API_KEY=sk-...
+python -m evaluate.eval_qa --data data/toolsense-qa/data.jsonl \
+    --output results/qa --model google/gemma-3-12b-it --num-samples 50
+```
+
+Prefer the console scripts? `pip install -e ".[eval]"` exposes `eval-qa` /
+`eval-mcq` / `eval-rrb`. Full reference below.
+
+```bash
+# QA probing — yes/no accuracy vs the 50% random baseline
+python -m evaluate.eval_qa  --data data/toolsense-qa/data.jsonl  --output results/qa  --model claude-4.5-sonnet
+
+# MCQ probing — 4-way accuracy vs the 25% random baseline
+python -m evaluate.eval_mcq --data data/toolsense-mcq/data.jsonl --output results/mcq --model claude-4.5-sonnet
+
+# Realistic Retrieval — Recall@k / hit-rate / MRR / nDCG over the 14-tool pool, by tier
+python -m evaluate.eval_rrb --data data/toolsense-realistic-retrieval/data.jsonl --output results/rrb --model claude-4.5-sonnet
+```
+
+Each command also accepts `--num-samples N` (smoke test) and `--dry-run` (a
+deterministic stub responder that runs end-to-end with **no API calls** — useful
+for CI). After `uv pip install -e .` the `eval-qa` / `eval-mcq` / `eval-rrb`
+console commands are available too.
+
+| Command | Key flags | Outputs |
+|---|---|---|
+| `eval-qa`  | `--tool-ref {name,description,none}` | `qa_predictions.jsonl`, `qa_results.md` |
+| `eval-mcq` | `--tool-ref {name,description,none}` | `mcq_predictions.jsonl`, `mcq_results.md` |
+| `eval-rrb` | `--tier {easy,medium,hard}`, `--k 1 3 5 10` | `rrb_predictions.jsonl`, `rrb_results.md` |
+
+### Example run
+
+Illustrative in-context numbers for `google/gemma-3-12b-it` (one of the backbone
+families used in the paper) on the full datasets, 0 unparseable responses across
+all runs. Accuracies are shown with 95% bootstrap CIs (the form the paper reports
+in). The `--tool-ref` axis isolates how much of the score comes from the tool's
+identity vs. the question alone:
+
+| `--tool-ref` | QA acc (rand 0.50) | MCQ acc (rand 0.25) |
+|---|---|---|
+| `none` (identity hidden) | 0.632 [0.592, 0.674] | 0.587 [0.544, 0.629] |
+| `name` (name + title) | 0.856 [0.824, 0.886] | 0.948 [0.925, 0.966] |
+| `description` (+ description) | 0.996 [0.990, 1.000] | 1.000 [1.000, 1.000] |
+
+Realistic Retrieval (ranking the shipped 14-tool pool; overall 95% CIs):
+
+| metric | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| overall | 0.285 | 0.545 | 0.692 | 0.895 | 0.725 |
+| 95% CI | [0.254, 0.314] | [0.512, 0.577] | [0.664, 0.720] | [0.877, 0.911] | [0.699, 0.754] |
+
+Accuracy rises monotonically as more of the tool is revealed, and retrieval
+degrades from easy to hard — both sanity checks that the scoring is wired
+correctly. Note that `none` sits above the random baseline: the questions and
+distractors carry tool-independent signal, so the meaningful quantity is the
+*lift* of `name`/`description` over `none`, which is significant here (e.g. MCQ
+`name` − `none` = +0.361, 95% CI [0.319, 0.407]). This is an in-context run and is
+**not** comparable to the paper's trained-ToolGen numbers; see
+[REPRODUCTION.md](REPRODUCTION.md) for the full breakdown and interpretation.
+
+These are illustrative `temperature=0` numbers, reproducible up to model/provider
+nondeterminism (no API `seed` or provider pin; `google/gemma-3-12b-it` is an
+OpenRouter alias, not a pinned snapshot) — a re-run lands close but need not match
+digit-for-digit. The scoring and CIs are deterministic given fixed predictions.
+
+---
+
 ## Citation
 
 If you use ToolSense in your research, please cite:
