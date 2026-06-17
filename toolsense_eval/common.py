@@ -168,7 +168,9 @@ def parse_choice_letter(text: str) -> str | None:
     decisions = [m for m in _CHOICE_DECISION.finditer(text)
                  if not _ENUM_AFTER.match(text[m.end():])]
     if decisions:
-        return decisions[-1].group(1)
+        # _CHOICE_DECISION is case-insensitive, so "the answer is c" captures a
+        # lowercase letter; normalize to match the uppercase A-D gold labels.
+        return decisions[-1].group(1).upper()
     delims = [m for m in _CHOICE_DELIM.finditer(text)
               if not _ENUM_AFTER.match(text[m.end():])]
     if delims:

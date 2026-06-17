@@ -2,7 +2,7 @@
 
 import math
 
-from evaluate import common, metrics
+from toolsense_eval import common, metrics
 
 
 # --------------------------------------------------------------------- metrics
@@ -72,6 +72,16 @@ def test_parse_choice_letter():
     assert common.parse_choice_letter("(D)") == "D"
     assert common.parse_choice_letter("B)") == "B"
     assert common.parse_choice_letter("none here") is None
+
+
+def test_parse_choice_letter_normalizes_case():
+    # A lowercase decision letter captured by the case-insensitive decision regex
+    # must be normalized to the uppercase A-D gold labels, else a correctly-parsed
+    # answer is scored wrong.
+    assert common.parse_choice_letter("Final answer: c") == "C"
+    assert common.parse_choice_letter("I would pick d") == "D"
+    assert common.parse_choice_letter("I choose b") == "B"
+    assert common.parse_choice_letter("answer: a") == "A"
 
 
 def test_parse_choice_letter_ignores_article_a():

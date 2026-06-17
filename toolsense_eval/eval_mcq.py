@@ -6,11 +6,11 @@ as A/B/C/D, and the model must pick one letter. We report exact-match accuracy
 against the 25% random baseline.
 
 Usage:
-    python -m evaluate.eval_mcq --data data/toolsense-mcq/data.jsonl \\
+    python -m toolsense_eval.eval_mcq --data data/toolsense-mcq/data.jsonl \\
         --output results/mcq --model claude-4.5-sonnet
 
     # Zero-cost end-to-end check:
-    python -m evaluate.eval_mcq --data data/toolsense-mcq/data.jsonl \\
+    python -m toolsense_eval.eval_mcq --data data/toolsense-mcq/data.jsonl \\
         --output results/mcq --dry-run
 """
 
@@ -19,7 +19,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from evaluate import common, metrics, model_client
+from toolsense_eval import common, metrics, model_client
 
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "")
 
@@ -91,7 +91,7 @@ def main() -> None:
         preds.append(pred)
         golds.append(correct_letter)
         out_records.append({"id": rec["id"], "gold": correct_letter, "pred": pred,
-                            "correct": pred == correct_letter, "raw": raw[:200]})
+                            "correct": pred == correct_letter, "raw": raw})
         if (i + 1) % 50 == 0 or i + 1 == len(records):
             print(f"  [{i+1}/{len(records)}] running accuracy="
                   f"{metrics.accuracy(preds, golds):.3f}")

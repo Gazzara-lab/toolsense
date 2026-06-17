@@ -10,8 +10,10 @@ entry points:
     eval-rrb   Realistic Retrieval — Recall@k / hit-rate / MRR / nDCG over the
                shipped 14-tool candidate pool, broken down by complexity tier
 
-All model calls go through LiteLLM (same dependency the generators use), so any
-OpenAI-compatible model, provider, or proxy works. Every command also supports a
+Model calls mirror the generators' pattern: when ``LITELLM_BASE_URL`` is set they
+route through an OpenAI-compatible proxy (the ``openai`` client), otherwise they
+call ``litellm.completion`` directly. Either way any OpenAI-compatible model,
+provider, or proxy works. Every command also supports a
 ``--dry-run`` mock mode that scores against a deterministic stub responder with
 **zero** paid API calls — useful for CI and for verifying the harness end-to-end.
 

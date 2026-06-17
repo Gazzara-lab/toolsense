@@ -298,7 +298,7 @@ Pre-generated benchmark datasets are included in `data/` and can be used directl
 
 ## Evaluation
 
-The `evaluate/` package scores any LiteLLM model on the shipped benchmarks and
+The `toolsense_eval/` package scores any LiteLLM model on the shipped benchmarks and
 reports the headline metrics. (This is an inference-only, in-context evaluation —
 see [REPRODUCTION.md](REPRODUCTION.md) for how it relates to the paper's numbers.)
 
@@ -312,12 +312,12 @@ fresh clone:
 pip install openai          # only runtime dep for an OpenAI-compatible endpoint
 
 # zero-setup smoke — no API key, no network (deterministic stub):
-python -m evaluate.eval_qa --data data/toolsense-qa/data.jsonl --output results/qa --dry-run
+python -m toolsense_eval.eval_qa --data data/toolsense-qa/data.jsonl --output results/qa --dry-run
 
 # real run against any OpenAI-compatible endpoint (here: OpenRouter):
 export LITELLM_BASE_URL=https://openrouter.ai/api/v1
 export LITELLM_API_KEY=sk-...
-python -m evaluate.eval_qa --data data/toolsense-qa/data.jsonl \
+python -m toolsense_eval.eval_qa --data data/toolsense-qa/data.jsonl \
     --output results/qa --model google/gemma-3-12b-it --num-samples 50
 ```
 
@@ -326,13 +326,13 @@ Prefer the console scripts? `pip install -e ".[eval]"` exposes `eval-qa` /
 
 ```bash
 # QA probing — yes/no accuracy vs the 50% random baseline
-python -m evaluate.eval_qa  --data data/toolsense-qa/data.jsonl  --output results/qa  --model claude-4.5-sonnet
+python -m toolsense_eval.eval_qa  --data data/toolsense-qa/data.jsonl  --output results/qa  --model claude-4.5-sonnet
 
 # MCQ probing — 4-way accuracy vs the 25% random baseline
-python -m evaluate.eval_mcq --data data/toolsense-mcq/data.jsonl --output results/mcq --model claude-4.5-sonnet
+python -m toolsense_eval.eval_mcq --data data/toolsense-mcq/data.jsonl --output results/mcq --model claude-4.5-sonnet
 
 # Realistic Retrieval — Recall@k / hit-rate / MRR / nDCG over the 14-tool pool, by tier
-python -m evaluate.eval_rrb --data data/toolsense-realistic-retrieval/data.jsonl --output results/rrb --model claude-4.5-sonnet
+python -m toolsense_eval.eval_rrb --data data/toolsense-realistic-retrieval/data.jsonl --output results/rrb --model claude-4.5-sonnet
 ```
 
 Each command also accepts `--num-samples N` (smoke test) and `--dry-run` (a

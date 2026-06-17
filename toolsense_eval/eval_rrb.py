@@ -13,11 +13,11 @@ model ranks it in-context; k therefore ranges over the pool size. See
 REPRODUCTION.md.
 
 Usage:
-    python -m evaluate.eval_rrb --data data/toolsense-realistic-retrieval/data.jsonl \\
+    python -m toolsense_eval.eval_rrb --data data/toolsense-realistic-retrieval/data.jsonl \\
         --output results/rrb --model claude-4.5-sonnet
 
     # Zero-cost end-to-end check:
-    python -m evaluate.eval_rrb --data data/toolsense-realistic-retrieval/data.jsonl \\
+    python -m toolsense_eval.eval_rrb --data data/toolsense-realistic-retrieval/data.jsonl \\
         --output results/rrb --dry-run
 """
 
@@ -26,7 +26,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from evaluate import common, metrics, model_client
+from toolsense_eval import common, metrics, model_client
 
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "")
 DEFAULT_KS = [1, 3, 5, 10]
@@ -93,10 +93,12 @@ def main() -> None:
     # per_tier[tier] = list of per-record metric dicts
     per_tier: dict[str, list[dict]] = {t: [] for t in TIERS}
     unparsed = 0
+    pool_sizes: set[int] = set()
 
     for i, rec in enumerate(records):
         pool = common.seeded_shuffle(rec["analyzed_tools"], rec["sample_id"])
         n = len(pool)
+        pool_sizes.add(n)
         gold = set(common.gold_tool_names(rec))
         prompt = _PROMPT.format(query=rec["query"], candidates=_candidate_block(pool), n=n)
 
@@ -127,6 +129,7 @@ def main() -> None:
         out_records.append({
             "sample_id": rec["sample_id"], "complexity": tier, "gold_count": len(gold),
             "ranked_tool_names": ranked_names, "unparseable": unparseable,
+            "n_parsed": n_parsed, "raw": raw,
             "recall": row["recall"], "hit": row["hit"], "mrr": row["mrr"], "ndcg": row["ndcg"],
         })
         if (i + 1) % 50 == 0 or i + 1 == len(records):
@@ -151,6 +154,15 @@ def main() -> None:
 
     common.write_jsonl(os.path.join(args.output, "rrb_predictions.jsonl"), out_records)
 
+    # Pool size is computed from the data (not assumed constant): a single value
+    # if every record shares it, else a min-max range.
+    if not pool_sizes:
+        pool_size_str = "0"
+    elif len(pool_sizes) == 1:
+        pool_size_str = str(next(iter(pool_sizes)))
+    else:
+        pool_size_str = f"{min(pool_sizes)}-{max(pool_sizes)}"
+
     # Build results card.
     header = "| tier | n | " + " | ".join(f"R@{k}" for k in args.k) + " | MRR | " + \
              " | ".join(f"nDCG@{k}" for k in args.k) + " |"
@@ -166,10 +178,10 @@ def main() -> None:
     lines = [
         "# Realistic Retrieval (RRB) — Evaluation Results",
         "",
-        f"Model: `{'<mock>' if args.dry_run else args.model}`  ·  candidate pool size: 14  ·  "
+        f"Model: `{'<mock>' if args.dry_run else args.model}`  ·  candidate pool size: {pool_size_str}  ·  "
         f"records: {len(records)}  ·  unparseable responses: {unparsed}",
         "",
-        "Recall@k / hit-rate@k / MRR / nDCG@k over the shipped 14-tool candidate pool. "
+        f"Recall@k / hit-rate@k / MRR / nDCG@k over the shipped {pool_size_str}-tool candidate pool. "
         "Not comparable to the paper's trained-ToolGen Rc@50 over the full catalog.",
         "",
         header, sep,

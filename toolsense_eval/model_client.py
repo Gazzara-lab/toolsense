@@ -6,7 +6,7 @@ is set, route through an OpenAI-compatible proxy; otherwise call the provider
 directly via ``litellm.completion``.
 
 ``litellm``/``openai``/``dotenv`` are imported lazily inside ``complete`` so that
-the mock path (and ``import evaluate.*``) works with only the standard library —
+the mock path (and ``import toolsense_eval.*``) works with only the standard library —
 no heavy dependencies required for ``--dry-run`` runs or for the unit tests.
 """
 
@@ -35,6 +35,9 @@ def complete(model: str, prompt: str, temperature: float = 0.0, max_retries: int
     Uses the proxy (OpenAI client) when ``LITELLM_BASE_URL`` is set, else calls
     ``litellm.completion`` directly. Retries with exponential backoff.
     """
+    if max_retries < 1:
+        raise ValueError(f"max_retries must be >= 1, got {max_retries}")
+
     proxy_base_url = os.environ.get("LITELLM_BASE_URL", "").strip() or None
     proxy_api_key = os.environ.get("LITELLM_API_KEY", "").strip() or None
 

@@ -5,13 +5,13 @@ its name + title) and the yes/no question, and must answer "Yes" or "No". We
 report exact-match accuracy against the 50% random baseline.
 
 Usage:
-    python -m evaluate.eval_qa \\
+    python -m toolsense_eval.eval_qa \\
         --data data/toolsense-qa/data.jsonl \\
         --output results/qa \\
         --model claude-4.5-sonnet
 
     # Zero-cost end-to-end check (deterministic stub, no API calls):
-    python -m evaluate.eval_qa --data data/toolsense-qa/data.jsonl \\
+    python -m toolsense_eval.eval_qa --data data/toolsense-qa/data.jsonl \\
         --output results/qa --dry-run
 
 Scope: this is an inference-only probe of what a model knows about a tool given
@@ -23,7 +23,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from evaluate import common, metrics, model_client
+from toolsense_eval import common, metrics, model_client
 
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "")
 
@@ -86,7 +86,7 @@ def main() -> None:
         preds.append(pred)
         golds.append(gold)
         out_records.append({"id": rec["id"], "gold": gold, "pred": pred,
-                            "correct": pred == gold, "raw": raw[:200]})
+                            "correct": pred == gold, "raw": raw})
         if (i + 1) % 50 == 0 or i + 1 == len(records):
             print(f"  [{i+1}/{len(records)}] running accuracy="
                   f"{metrics.accuracy(preds, golds):.3f}")

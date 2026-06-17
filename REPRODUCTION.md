@@ -1,12 +1,12 @@
 # Reproduction notes — evaluation harness
 
-This document records (1) what the `evaluate/` harness measures and how it relates
+This document records (1) what the `toolsense_eval/` harness measures and how it relates
 to the paper, and (2) dataset-integrity facts that can be re-derived offline from
 the shipped JSONL files with zero API calls.
 
 ## What the harness measures (and what it does not)
 
-The `evaluate/` package scores any LiteLLM model on the three shipped diagnostic
+The `toolsense_eval/` package scores any LiteLLM model on the three shipped diagnostic
 datasets:
 
 | Command | Dataset | Metric | Random baseline |
@@ -40,8 +40,8 @@ paper's trained-retriever numbers.
 
 Models do not always obey "answer with one word/letter" — they explain, use
 markdown, restate the options, or answer with a synonym. The parsers in
-`evaluate/common.py` are hardened against the common cases and verified by
-known-answer tests in `evaluate/tests/test_metrics.py`:
+`toolsense_eval/common.py` are hardened against the common cases and verified by
+known-answer tests in `toolsense_eval/tests/test_metrics.py`:
 
 - **QA** — an explicitly *declared* answer wins, and the last declaration wins, so
   "the older version said yes, so no" is read as **No**. A clean leading answer is
@@ -157,7 +157,7 @@ eval-rrb --dry-run : R@1 0.095  R@3 0.223  R@5 0.357  R@10 0.718  MRR 0.432
 ```
 
 Metric and parser correctness is covered by known-answer unit tests in
-`evaluate/tests/test_metrics.py` (run with `pytest evaluate/tests`).
+`toolsense_eval/tests/test_metrics.py` (run with `pytest toolsense_eval/tests`).
 
 ## Dataset-integrity facts (verified offline)
 
@@ -181,7 +181,7 @@ so `wc -l data/toolbench-tools/data.jsonl` reports 46979 vs 46,980 records.
 - Gold set sizes match the documented tier contract: easy = 1 (167×);
   medium = 2 (46×) or 3 (121×); hard = 4–8 (28× / 74× / 46× / 16× / 2×).
 - The `tool` field is polymorphic: a single dict for easy, a list of dicts for
-  medium/hard. `evaluate.common.gold_tool_names` normalizes both.
+  medium/hard. `toolsense_eval.common.gold_tool_names` normalizes both.
 - All gold tools are present in the candidate pool for **500/500** records (mean
   fraction = 1.0), so pool-based Recall@k is well defined. No duplicate gold names.
 

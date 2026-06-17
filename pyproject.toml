@@ -33,13 +33,13 @@ generate-mcq = "generate_mcq:main"
 benchmark-generate = "realistic_benchmark.run_generation:main"
 benchmark-seeds = "realistic_benchmark.seed_preparation:main"
 benchmark-postprocess = "realistic_benchmark.postprocess:main"
-eval-qa = "evaluate.eval_qa:main"
-eval-mcq = "evaluate.eval_mcq:main"
-eval-rrb = "evaluate.eval_rrb:main"
+eval-qa = "toolsense_eval.eval_qa:main"
+eval-mcq = "toolsense_eval.eval_mcq:main"
+eval-rrb = "toolsense_eval.eval_rrb:main"
 
 [tool.hatch.build.targets.wheel]
-include = ["generate_qa.py", "generate_mcq.py", "realistic_benchmark", "evaluate"]
-exclude = ["evaluate/tests"]
+include = ["generate_qa.py", "generate_mcq.py", "realistic_benchmark", "toolsense_eval"]
+exclude = ["toolsense_eval/tests"]
 
 [tool.uv]
 constraint-dependencies = ["onnxruntime<1.25"]
